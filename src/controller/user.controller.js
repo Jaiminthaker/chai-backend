@@ -78,18 +78,20 @@ const loginUser = asyncHandler(async (req, res) => {
     const loggedInUser = await User.findById(user._id)
         .select("-password -refreshToken");
 
-        const option = {
-            httpOnly: true,
-            secure: true,
-        }
+    const cookieOptions = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    };
 
-    return res.status(200).json(
-        new ApiResponse(200, "User logged in successfully", {
+    return res.status(200)
+        .cookie("accessToken", accessToken, cookieOptions)
+        .cookie("refreshToken", refreshToken, cookieOptions)
+        .json(new ApiResponse(200, "User logged in successfully", {
             user: loggedInUser,
             accessToken,
             refreshToken,
-        })
-    );
+        }));
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
@@ -109,7 +111,8 @@ const logoutUser = asyncHandler(async (req, res) => {
 
     const options = {
         httpOnly: true,
-        secure: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     };
 
     return res.status(200)
